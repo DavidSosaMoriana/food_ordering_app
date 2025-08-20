@@ -1,5 +1,3 @@
-import CustomButton from "@/components/CustomButton";
-import CustomInput from "@/components/CustomInput";
 import { images } from "@/constants";
 import { Slot } from "expo-router";
 import React from "react";
@@ -37,17 +35,8 @@ export default function _Layout() {
             resizeMode="contain"
           />
         </View>
-        <CustomInput
-          placeholder="Enter your email"
-          value={""}
-          onChangeText={(text) => {}}
-          label="Email"
-          secureTextEntry={false}
-          keyboardType="email-address"
-        />
-        <CustomButton />
+        <Slot />
       </ScrollView>
-      <Slot />
     </KeyboardAvoidingView>
   );
 }
