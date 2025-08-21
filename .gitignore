@@ -47,3 +47,5 @@ yarn-error.*
 .appwrite/
 
 app-example
+
+.env.local

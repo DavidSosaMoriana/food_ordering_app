@@ -1,13 +1,16 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
+import { useAuth } from "@/contexts/AuthContext";
 import { signIn } from "@/lib/appwrite";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, View } from "react-native";
+import * as Sentry from "@sentry/react-native";
 
 const SignIn = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
+  const { refetchUser } = useAuth();
 
   const submit = async () => {
     const { email, password } = form;
@@ -19,9 +22,13 @@ const SignIn = () => {
     try {
       await signIn({ email, password });
 
-      router.replace("/");
+      // Refetch user data after successful sign in
+      await refetchUser();
+
+      // Navigation will be handled automatically by AuthContext
     } catch (error: any) {
       Alert.alert("Error", error.message);
+      Sentry.captureEvent(error);
     } finally {
       setisSubmitting(false);
     }

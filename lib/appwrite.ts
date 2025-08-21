@@ -36,7 +36,16 @@ export const createUser = async ({
     const newAccount = await account.create(ID.unique(), email, password, name);
     if (!newAccount) throw Error;
 
-    await signIn({ email, password });
+        // Check if there's already an active session before signing in
+    try {
+      const currentSession = await account.getSession("current");
+      if (!currentSession) {
+        await signIn({ email, password });
+      }
+    } catch {
+      // No active session, sign in
+      await signIn({ email, password });
+    }
 
     const avatarUrl = avatars.getInitialsURL(name);
 
@@ -52,7 +61,19 @@ export const createUser = async ({
 };
 export const signIn = async ({ email, password }: SignInParams) => {
   try {
+    // First check if there's already an active session
+    try {
+      const currentSession = await account.getSession("current");
+      if (currentSession) {
+        // If there's an active session, return it
+        return currentSession;
+      }
+    } catch {
+      // No active session, continue with login
+    }
+
     const session = await account.createEmailPasswordSession(email, password);
+    return session;
   } catch (error) {
     throw new Error(error as string);
   }
@@ -61,7 +82,7 @@ export const signIn = async ({ email, password }: SignInParams) => {
 export const getCurrentUser = async () => {
   try {
     const currentAccount = await account.get();
-    if (!currentAccount) throw Error;
+    if (!currentAccount) return null;
 
     const currentUser = await databases.listDocuments(
       appwriteConfig.databaseId,
@@ -69,11 +90,29 @@ export const getCurrentUser = async () => {
       [Query.equal("accountId", currentAccount.$id)]
     );
 
-    if (!currentUser) throw Error;
+    if (!currentUser?.documents?.length) return null;
 
     return currentUser.documents[0];
-  } catch (e) {
-    console.log(e);
-    throw new Error(e as string);
+  } catch (error) {
+    console.log("getCurrentUser error:", error);
+    return null;
+  }
+};
+
+export const signOut = async () => {
+  try {
+    await account.deleteSession("current");
+  } catch (error) {
+    console.log("SignOut error:", error);
+    throw new Error(error as string);
+  }
+};
+
+export const isUserLoggedIn = async (): Promise<boolean> => {
+  try {
+    const currentAccount = await account.get();
+    return !!currentAccount;
+  } catch {
+    return false;
   }
 };
